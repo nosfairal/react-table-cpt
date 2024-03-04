@@ -28,99 +28,89 @@ export interface TableProps {
     colorSecondary: string;
 }
 
-const Table = ({
+interface Element {
+    [key: string]: any; // Permet l'utilisation de clés de type string pour indexer
+}
+
+const Table: React.FC<TableProps> = ({
     title,
     arrayElement,
     attributes,
     colorPrimary,
     colorSecondary,
-}: TableProps) => {
+}) => {
+    // État initial pour les en-têtes et les éléments du tableau
     const [thValue, setTableThValue] = useState<string[]>([]);
-    const [arrElements, setArrElements] = useState<any[]>(arrayElement);
-    useEffect(() => {
-        if (arrayElement.length > 0) {
-            const keys = Object.keys(arrayElement[0]);
-            setTableThValue(keys);
-            setArrElements(arrayElement);
-        } else {
-            setArrElements([]);
-        }
-    }, [arrayElement]);
+    const [arrElements, setArrElements] = useState<object[]>([]);
 
-    // ----Pagination----
+    // Pagination
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [elementsPerPage, setElementsPerPage] = useState<number>(10);
+
+    // Recherche
+    const [wordSearch, setWordSearch] = useState<string>('');
+
+    // Tri
+    const [sortKey, setSortKey] = useState<string | null>(null);
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+    // Responsive
+    const [mobile, setMobile] = useState<boolean>(false);
+
+    // Mise à jour des en-têtes et des éléments du tableau
+    useEffect(() => {
+        const keys = arrayElement.length > 0 ? Object.keys(arrayElement[0]) : [];
+        setTableThValue(keys);
+        setArrElements(arrayElement);
+    }, [arrayElement]);
+
+    // Pagination et affichage des éléments actuels
     const indexLastItem = currentPage * elementsPerPage;
     const indexFirstItem = indexLastItem - elementsPerPage;
     const currentItems = arrElements.slice(indexFirstItem, indexLastItem);
-    //---- Search-----
-    const [wordSearch, setWordSearch] = useState<string>('');
-    useEffect(() => {
-        if (arrayElement.length > 0) {
-            const newArr = arrayElement.filter(item =>
-                search(wordSearch, item, attributes)
-            );
-            wordSearch.length >= 1
-                ? setArrElements(newArr)
-                : setArrElements(arrayElement);
-            setCurrentPage(1);
-        } else {
-            setArrElements([]);
-        }
-    }, [wordSearch]);
-    // --- Sort-----
-    const [sortKey, setSortKey] = useState<string | null>(null);
-    const [sortOrder, setSortOrder] = useState<string>('asc');
 
-    const handleSort = (key: string) => {
-        if (sortKey === key) {
-            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-        } else {
-            setSortKey(key);
-            setSortOrder('asc');
-        }
-    };
-    // Sort elements based on key and sort order
+    // Gestion de la recherche
     useEffect(() => {
-        if (sortKey && sortOrder) {
-            if (arrayElement.length > 0) {
-                const sortedElements = [...arrElements].sort((a, b) => {
-                    if (a[sortKey] < b[sortKey]) return sortOrder === 'asc' ? -1 : 1;
-                    if (a[sortKey] > b[sortKey]) return sortOrder === 'asc' ? 1 : -1;
-                    return 0;
-                });
-                setArrElements(sortedElements);
-            } else {
-                setSortKey(null);
-                setSortOrder('asc');
-                setArrElements([]);
-            }
-        }
+        const filterElements = () => {
+            if (wordSearch.length === 0) return arrayElement;
+            return arrayElement.filter(item => search(wordSearch, item, attributes));
+        };
+
+        setArrElements(filterElements());
+        setCurrentPage(1); // Réinitialiser la pagination lors d'une nouvelle recherche
+    }, [wordSearch, arrayElement, attributes]);
+
+    // Gestion du tri
+    useEffect(() => {
+        const sortElements = () => {
+            if (!sortKey) return arrElements;
+            return [...arrElements].sort((a: Element, b: Element) => {
+                if (a[sortKey] < b[sortKey]) return sortOrder === 'asc' ? -1 : 1;
+                if (a[sortKey] > b[sortKey]) return sortOrder === 'asc' ? 1 : -1;
+                return 0;
+            });
+        };
+
+        setArrElements(sortElements());
     }, [sortKey, sortOrder]);
-    //---- Responsive ------
-    const [mobile, setMobile] = useState<boolean>(false);
-    let isBrowser = typeof window !== 'undefined';
+
+    // Gestion de la réactivité mobile
     useEffect(() => {
         const checkWindowWidth = () => {
-            if (isBrowser) {
-                if (window.innerWidth <= 1023) {
-                    setMobile(true);
-                } else {
-                    setMobile(false);
-                }
-            }
+            setMobile(window.innerWidth <= 1023);
         };
 
-        // Checks window width on initial mount
         checkWindowWidth();
-        // Add event handler for window width
         window.addEventListener('resize', checkWindowWidth);
 
-        // Clean up event handler on component disassembly
-        return () => {
-            window.removeEventListener('resize', checkWindowWidth);
-        };
+        return () => window.removeEventListener('resize', checkWindowWidth);
     }, []);
+
+    // Fonction de tri modifiée pour éviter les dépendances circulaires
+    const handleSort = (key: string) => {
+        setSortKey(key);
+        setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    };
 
     return (
         <fieldset
