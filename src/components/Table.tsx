@@ -28,10 +28,6 @@ export interface TableProps {
     colorSecondary: string;
 }
 
-interface Element {
-    [key: string]: any; // Permet l'utilisation de clés de type string pour indexer
-}
-
 const Table = ({
     title,
     arrayElement,
@@ -86,16 +82,21 @@ const Table = ({
     };
     // Sort elements based on key and sort order
     useEffect(() => {
-        if (sortKey && sortOrder && arrayElement.length > 0) {
-            const sortedElements = [...arrayElement].sort((a: Element, b: Element) => {
-                if (!a[sortKey] || !b[sortKey]) return 0; // S'assurer que les clés existent
-                return (a[sortKey] < b[sortKey]) ? (sortOrder === 'asc' ? -1 : 1)
-                    : (a[sortKey] > b[sortKey]) ? (sortOrder === 'asc' ? 1 : -1)
-                        : 0;
-            });
-            setArrElements(sortedElements);
+        if (sortKey && sortOrder) {
+            if (arrayElement.length > 0) {
+                const sortedElements = [...arrElements].sort((a, b) => {
+                    if (a[sortKey] < b[sortKey]) return sortOrder === 'asc' ? -1 : 1;
+                    if (a[sortKey] > b[sortKey]) return sortOrder === 'asc' ? 1 : -1;
+                    return 0;
+                });
+                setArrElements(sortedElements);
+            } else {
+                setSortKey(null);
+                setSortOrder('asc');
+                setArrElements([]);
+            }
         }
-    }, [arrayElement, sortKey, sortOrder]);
+    }, [sortKey, sortOrder]);
     //---- Responsive ------
     const [mobile, setMobile] = useState<boolean>(false);
     let isBrowser = typeof window !== 'undefined';
