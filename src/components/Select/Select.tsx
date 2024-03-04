@@ -37,7 +37,7 @@ const Select = ({ setElementsPerPage, setCurrentPage, colorPrimary }: SelectProp
                     borderRadius: "5px",
                     height: "21px",
                     margin: "none",
-                    padding: "none",
+                    padding: "0 10px",
                 }}
             >
                 <option value="10">10</option>
